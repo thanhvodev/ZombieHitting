@@ -3,6 +3,7 @@ import sys
 import random
 import pygame
 import time
+from pygame import mixer
 
 pygame.init()
 
@@ -19,6 +20,7 @@ SCRORE_X = 10
 SCRORE_Y = 500
 TIMER_X = 170
 TIMER_Y = 0
+GAME_TIME = 60000
 
 # Variables
 timer = 0
@@ -30,9 +32,12 @@ old_zombie_co_ind = 8
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 background = pygame.image.load('background.png')
 zombie = pygame.image.load('zombie.png')
+explosion = pygame.image.load('nuclear-explosion.png')
 naruto = pygame.image.load('naruto.jpg')
 
-# Clock
+# Explode
+explosion_x = -100
+explosion_y = -100
 
 
 # Bullets
@@ -47,11 +52,15 @@ rasen_state = "ready"
 
 zombie_x, zombie_y = ZOMBIE_COORDINATES[0]
 
+# Sounds
+mixer.init()
+mixer.music.load("BackgroundTheme.wav")
+mixer.music.play(-1)
+
 
 def fire_rasen_shuriken(x, y):
     global rasen_state
     rasen_state = "fire"
-
     screen.blit(rasenShurikenImg, (x, y))
 
 
@@ -63,7 +72,11 @@ def zombie_ins(random_inx):
 
 def is_collision(rasenX, rasenY, zomX, zomY):
     distance = math.sqrt(math.pow(rasenX - zomX, 2) + (math.pow(rasenY - zomY, 2)))
+
     if distance < 64:
+        hit_sound = mixer.Sound("Punch_Hit_Sound_Effect.wav")
+        hit_sound.play()
+        screen.blit(zombie, (-100, -100))
         return True
     else:
         return False
@@ -94,7 +107,8 @@ def show_time(time, x, y):
 
 # Game loop
 running = True
-
+is_kill_zombie = False
+timer_explode = 0
 
 def play():
     global zombie_co_ind
@@ -106,6 +120,8 @@ def play():
     global rasenShuriken_changed_x
     global rasenShurikenX
     global rasenShurikenY
+    global is_kill_zombie
+    global timer_explode
     pygame.display.set_caption("Whack the Zom")
     static_time = pygame.time.get_ticks()
     while running:
@@ -115,6 +131,9 @@ def play():
         screen.blit(naruto, (MIDDLE_X, PLAYER_Y))
 
         zombie_ins(zombie_co_ind)
+        if is_kill_zombie:
+            screen.blit(explosion, (explosion_x, explosion_y))
+
         if change_hole_zombie:
             timer = time.time()
             zombie_co_ind = random.randint(0, 7)
@@ -126,6 +145,8 @@ def play():
         if time.time() - timer > 1:
             change_hole_zombie = True
 
+        if (time.time() - timer_explode)*100 > 25:
+            is_kill_zombie = False
         # Rasen suriken
         if rasen_state == "fire":
             rasenShurikenX += rasenShuriken_changed_x
@@ -143,6 +164,12 @@ def play():
 
         # Collisions
         if is_collision(rasenShurikenX, rasenShurikenY, zombie_x, zombie_y):
+            is_kill_zombie = True
+            explosion_x = zombie_x
+            explosion_y = zombie_y
+
+            screen.blit(explosion, (explosion_x, explosion_y))
+            timer_explode = time.time()
             global score_value
             score_value += 1
             change_hole_zombie = True
@@ -165,7 +192,7 @@ def play():
                 fire_rasen_shuriken(rasenShurikenX, rasenShurikenY)
 
         current_time = -static_time + pygame.time.get_ticks()
-        left_time = 5000 - current_time
+        left_time = GAME_TIME - current_time
         if left_time <= 1000:
             end_game()
         left_time /= 1000
