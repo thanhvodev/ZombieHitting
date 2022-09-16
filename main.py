@@ -101,6 +101,11 @@ def play():
     global change_hole_zombie
     global old_zombie_co_ind
     global rasen_state
+    global timer
+    global rasenShuriken_changed_y
+    global rasenShuriken_changed_x
+    global rasenShurikenX
+    global rasenShurikenY
     pygame.display.set_caption("Whack the Zom")
     static_time = pygame.time.get_ticks()
     while running:
@@ -161,12 +166,43 @@ def play():
 
         current_time = -static_time + pygame.time.get_ticks()
         left_time = 5000 - current_time
+        if left_time <= 1000:
+            end_game()
         left_time /= 1000
-        print(left_time)
         show_time(left_time, TIMER_X, TIMER_Y)
         show_score(SCRORE_X, SCRORE_Y)
         pygame.display.update()
         clock.tick(60)
+
+
+def end_game():
+    pygame.display.set_caption("Game Finished")
+    global score_value
+    global miss_value
+    global rasen_state
+    while True:
+        screen.fill((204, 152, 102, 255))
+        play_button = font.render("PLAY AGAIN", True, (100, 100, 100))
+        score = font.render("Your score: " + str(score_value), True, (100, 100, 100))
+        miss = font.render("Your misses: " + str(miss_value), True, (100, 100, 100))
+        screen.blit(play_button, (SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 - 20))
+        screen.blit(score, (SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 40))
+        screen.blit(miss, (SCREEN_WIDTH / 2 - 100, SCREEN_HEIGHT / 2 + 80))
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                if (SCREEN_WIDTH / 2 - 100) < mouse_x < (SCREEN_WIDTH / 2 + 80):
+                    if (SCREEN_HEIGHT / 2 - 20) < mouse_y < SCREEN_HEIGHT / 2 + 30:
+                        score_value = 0
+                        miss_value = 0
+                        rasen_state = "ready"
+                        play()
+
+        pygame.display.update()
 
 
 def main_menu():
