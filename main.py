@@ -108,7 +108,7 @@ def show_time(time, x, y):
 # Game loop
 running = True
 is_kill_zombie = False
-timer_explode = 0
+timer_explode = time.time()
 
 def play():
     global zombie_co_ind
@@ -122,6 +122,8 @@ def play():
     global rasenShurikenY
     global is_kill_zombie
     global timer_explode
+    global score_value
+
     pygame.display.set_caption("Whack the Zom")
     static_time = pygame.time.get_ticks()
     while running:
@@ -130,23 +132,23 @@ def play():
         screen.blit(background, (0, 10))
         screen.blit(naruto, (MIDDLE_X, PLAYER_Y))
 
-        zombie_ins(zombie_co_ind)
         if is_kill_zombie:
             screen.blit(explosion, (explosion_x, explosion_y))
-
-        if change_hole_zombie:
-            timer = time.time()
-            zombie_co_ind = random.randint(0, 7)
-            while zombie_co_ind == old_zombie_co_ind:
-                zombie_co_ind = random.randint(0, 7)
-            old_zombie_co_ind = zombie_co_ind
-            change_hole_zombie = False
-
+        else:
+            zombie_ins(zombie_co_ind)
         if time.time() - timer > 1:
             change_hole_zombie = True
 
         if (time.time() - timer_explode)*100 > 25:
             is_kill_zombie = False
+            if change_hole_zombie:
+                timer = time.time()
+                zombie_co_ind = random.randint(0, 7)
+                while zombie_co_ind == old_zombie_co_ind:
+                    zombie_co_ind = random.randint(0, 7)
+                old_zombie_co_ind = zombie_co_ind
+                change_hole_zombie = False
+
         # Rasen suriken
         if rasen_state == "fire":
             rasenShurikenX += rasenShuriken_changed_x
@@ -165,14 +167,14 @@ def play():
         # Collisions
         if is_collision(rasenShurikenX, rasenShurikenY, zombie_x, zombie_y):
             is_kill_zombie = True
+            change_hole_zombie = True
             explosion_x = zombie_x
             explosion_y = zombie_y
 
             screen.blit(explosion, (explosion_x, explosion_y))
+            screen.blit(zombie, (-90, -90))
             timer_explode = time.time()
-            global score_value
             score_value += 1
-            change_hole_zombie = True
             rasen_state = "ready"
 
         # Event detection
