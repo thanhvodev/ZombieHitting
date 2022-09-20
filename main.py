@@ -21,6 +21,7 @@ SCRORE_Y = 500
 TIMER_X = 170
 TIMER_Y = 0
 GAME_TIME = 60000
+ZOMBIE_SPEED = 10
 
 # Variables
 timer = 0
@@ -34,6 +35,10 @@ background = pygame.image.load('background.png')
 zombie = pygame.image.load('zombie.png')
 explosion = pygame.image.load('nuclear-explosion.png')
 naruto = pygame.image.load('naruto.jpg')
+layer1 = pygame.image.load("background1.png")
+layer2 = pygame.image.load('background2.png')
+layer3 = pygame.image.load('background3.png')
+mask = pygame.image.load('mask.png')
 
 # Explode
 explosion_x = -100
@@ -49,8 +54,9 @@ rasenShuriken_changed_y = -SPEED
 rasen_state = "ready"
 
 # Zombies
-
+zombie_state = "change_hole"
 zombie_x, zombie_y = ZOMBIE_COORDINATES[0]
+zombie_y_anim = zombie_y
 
 # Sounds
 mixer.init()
@@ -65,9 +71,28 @@ def fire_rasen_shuriken(x, y):
 
 
 def zombie_ins(random_inx):
-    global zombie_x, zombie_y
+    global zombie_x, zombie_y, zombie_y_anim, zombie_state
     zombie_x, zombie_y = ZOMBIE_COORDINATES[random_inx]
-    screen.blit(zombie, (zombie_x, zombie_y))
+    if zombie_state == "change_hole":
+        zombie_y_anim = zombie_y + 60
+        zombie_state = "appear"
+    elif zombie_state == "appear":
+        zombie_y_anim -= ZOMBIE_SPEED
+        if zombie_y_anim <= zombie_y:
+            zombie_state = "idle"
+    elif zombie_state == "disappear":
+        zombie_y_anim += ZOMBIE_SPEED
+    else:
+        zombie_y_anim = zombie_y
+    screen.blit(zombie, (zombie_x, zombie_y_anim))
+    screen.blit(mask, (0, SCREEN_HEIGHT - 10 - 292))
+    if (random_inx < 3):
+        screen.blit(layer1, (0, 10))
+    elif (random_inx < 6):
+        screen.blit(layer2, (0, 10))
+    else:
+        screen.blit(layer3, (0, 10))
+
 
 
 def is_collision(rasenX, rasenY, zomX, zomY):
@@ -76,7 +101,7 @@ def is_collision(rasenX, rasenY, zomX, zomY):
     if distance < 64:
         hit_sound = mixer.Sound("Punch_Hit_Sound_Effect.wav")
         hit_sound.play()
-        screen.blit(zombie, (-100, -100))
+        #screen.blit(zombie, (-100, -100))
         return True
     else:
         return False
@@ -123,6 +148,8 @@ def play():
     global is_kill_zombie
     global timer_explode
     global score_value
+    global zombie_y_anim
+    global zombie_state
 
     pygame.display.set_caption("Whack the Zom")
     static_time = pygame.time.get_ticks()
@@ -136,8 +163,13 @@ def play():
             screen.blit(explosion, (explosion_x, explosion_y))
         else:
             zombie_ins(zombie_co_ind)
+
+        if time.time() - timer >= 0.8 and not is_kill_zombie:
+            zombie_state = "disappear"
+
         if time.time() - timer > 1:
             change_hole_zombie = True
+            zombie_state = "change_hole"
 
         if (time.time() - timer_explode)*100 > 25:
             is_kill_zombie = False
